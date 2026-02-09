@@ -1,5 +1,5 @@
 import { useState } from "react";
-import FloatingHearts from "@/components/FloatingHearts";
+import FloatingLetters from "@/components/FloatingLetters";
 import TypewriterText from "@/components/TypewriterText";
 import GlowingBox from "@/components/GlowingBox";
 import ValentineButtons from "@/components/ValentineButtons";
@@ -23,7 +23,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-romantic-gradient overflow-x-hidden">
-      <FloatingHearts />
+      <FloatingLetters />
       <MusicToggle />
 
       {/* Main Content */}
@@ -36,10 +36,12 @@ const Index = () => {
               onComplete={() => setShowSecondText(true)}
             />
           </h1>
-          
+
           {showSecondText && (
-            <h2 className="text-2xl md:text-4xl font-elegant text-rose-dark animate-fade-in">
-              <TypewriterText text="Gokul V Weds Hema D" delay={0} />
+            <h2 className="text-3xl md:text-5xl font-elegant text-primary animate-fade-in mt-4 tracking-wide">
+              <span>Gokul V</span>
+              <span className="mx-3 text-secondary-foreground font-cursive text-4xl md:text-6xl text-accent animate-pulse">Weds</span>
+              <span>Hema D</span>
             </h2>
           )}
         </div>

@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        cursive: ["Dancing Script", "cursive"],
-        elegant: ["Playfair Display", "serif"],
+        cursive: ["Great Vibes", "cursive"],
+        elegant: ["Cinzel", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
