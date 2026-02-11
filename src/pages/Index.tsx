@@ -1,7 +1,7 @@
 import { useState } from "react";
 import FloatingLetters from "@/components/FloatingLetters";
 import TypewriterText from "@/components/TypewriterText";
-import GlowingBox from "@/components/GlowingBox";
+import RomanticBox from "@/components/RomanticBox";
 import ValentineButtons from "@/components/ValentineButtons";
 import MediaCollage from "@/components/MediaCollage";
 import MusicToggle from "@/components/MusicToggle";
@@ -53,8 +53,8 @@ const Index = () => {
           <span className="text-4xl">💝</span>
         </div>
 
-        {/* Glowing Valentine Box */}
-        <GlowingBox className="max-w-md mx-auto text-center">
+        {/* Romantic Valentine Box */}
+        <RomanticBox className="max-w-md mx-auto text-center">
           <p className="text-4xl md:text-5xl font-cursive text-primary leading-relaxed">
             Will you be my Valentine?
           </p>
@@ -63,7 +63,7 @@ const Index = () => {
             <span className="text-2xl animate-float" style={{ animationDelay: "0.5s" }}>💕</span>
             <span className="text-2xl animate-float" style={{ animationDelay: "1s" }}>💕</span>
           </div>
-        </GlowingBox>
+        </RomanticBox>
 
         {/* Yes/No Buttons */}
         <ValentineButtons onYesClick={handleYesClick} />

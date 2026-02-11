@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Play, X } from "lucide-react";
+import { Play, X, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import VideoItem from "./VideoItem";
 
 // Dynamically import all compatible assets
 const assetModules = import.meta.glob('../assets/*.{jpg,jpeg,png,mp4,JPG,JPEG,PNG,MP4}', { eager: true, as: 'url' });
@@ -14,7 +14,9 @@ interface MediaItem {
 }
 
 const MediaCollage = ({ visible }: { visible: boolean }) => {
-  const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isMuted, setIsMuted] = useState(true); // Start muted like Instagram
+  const [isPlaying, setIsPlaying] = useState(true);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -85,32 +87,54 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
   }, []);
 
   useEffect(() => {
+    if (!visible) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.target instanceof HTMLVideoElement) {
+            const video = entry.target;
             if (entry.isIntersecting) {
-              const playPromise = entry.target.play();
+              // Strict autoplay policy: Must be muted
+              video.muted = true;
+              video.volume = 0;
+              video.playsInline = true;
+
+              const playPromise = video.play();
               if (playPromise !== undefined) {
-                playPromise.catch(() => {
+                playPromise.catch((error) => {
                   // Auto-play was prevented
+                  console.warn("Autoplay prevented:", error);
+                  // Try again muted if it failed (though we set it above)
+                  video.muted = true;
+                  video.play().catch(e => console.error("Retry failed:", e));
                 });
               }
             } else {
-              entry.target.pause();
+              video.pause();
             }
           }
         });
       },
-      { threshold: 0.2 }
+      {
+        threshold: 0.6, // Increased threshold to ensure more of video is visible
+        rootMargin: '0px'
+      }
     );
 
-    videoRefs.current.forEach((video) => {
-      if (video) observer.observe(video);
-    });
+    // Wait a bit ensuring ref logic is settled
+    const timeoutId = setTimeout(() => {
+      videoRefs.current.forEach((video) => {
+        if (video) observer.observe(video);
+      });
+    }, 500);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, [visible, mediaItems]);
+
 
   if (!visible) return null;
 
@@ -205,7 +229,7 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
                         style={{
                           transform: `rotate(${randomRotate}deg)`
                         }}
-                        onClick={() => setSelectedVideo(item)}
+                        onClick={() => setActiveIndex(index)}
                       >
                         {/* Pin or Tape */}
                         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-gray-300 shadow-inner z-10 border border-gray-400"></div>
@@ -218,12 +242,13 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <video
+                            <VideoItem
                               ref={(el) => (videoRefs.current[index] = el)}
                               src={item.src}
-                              muted={true}
+                              muted
                               loop
                               playsInline
+                              webkit-playsinline="true"
                               preload="metadata"
                               className="w-full h-full object-cover"
                             />
@@ -251,41 +276,114 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
         </div>
       </div>
 
-      {/* Enlarged Media Modal */}
-      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-        <DialogContent className="max-w-5xl w-full p-0 bg-transparent border-none shadow-none flex justify-center items-center">
-          <div className="relative w-full max-h-[90vh] flex justify-center">
-            <button
-              onClick={() => setSelectedVideo(null)}
-              className="absolute -top-12 right-0 md:-right-12 z-50 p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors backdrop-blur-sm"
-            >
-              <X className="w-8 h-8 text-white" />
-            </button>
+      {/* Full Screen Reels-Style Viewer */}
+      {activeIndex !== null && (
+        <div
+          className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center animate-in fade-in duration-300"
+          onClick={() => setActiveIndex(null)} // Close when clicking background
+        >
+          {/* Close Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveIndex(null);
+            }}
+            className="absolute top-6 right-6 z-[70] p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-all border border-white/10"
+          >
+            <X className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
 
-            {selectedVideo && (
-              <div className="bg-white p-2 rounded-lg shadow-2xl overflow-hidden max-w-full">
-                {selectedVideo.type === 'video' ? (
-                  <div className="relative w-full h-full bg-black flex items-center justify-center">
-                    <video
-                      src={selectedVideo.src}
-                      controls
-                      autoPlay
-                      playsInline
-                      className="max-w-full max-h-[80vh] w-auto h-auto"
-                    />
-                  </div>
-                ) : (<img
-                  src={selectedVideo.src}
-                  alt={selectedVideo.caption}
-                  className="max-w-full max-h-[80vh] object-contain"
+          {/* Main Content Container */}
+          <div
+            className="relative w-full h-full md:w-auto md:h-[90vh] md:aspect-[9/16] bg-black shadow-2xl overflow-hidden flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking content
+          >
+            {mediaItems[activeIndex].type === 'video' ? (
+              <div className="relative w-full h-full flex items-center justify-center bg-gray-900/50">
+                <VideoItem
+                  src={mediaItems[activeIndex].src}
+                  className="w-full h-full object-contain md:object-cover" // Contain on mobile to see whole video, Cover on desktop for reel feel? OR Cover everywhere for immersive?
+                  // "Instagram Reels" usually implies object-cover (full screen crop).
+                  // But for personal videos, cropping heads off is bad. object-contain is safer for viewing.
+                  // However, user said "Reels method", usually implies immersive full screen.  
+                  // I will use object-contain for now to ensure visibility as requested ("fix the videos").
+                  autoPlay
+                  loop
+                  playsInline
+                  webkit-playsinline="true"
+                  muted={isMuted}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const v = e.currentTarget;
+                    if (v.paused) {
+                      v.play();
+                      setIsPlaying(true);
+                    } else {
+                      v.pause();
+                      setIsPlaying(false);
+                    }
+                  }}
                 />
+
+                {/* Play/Pause Overlay Indicator */}
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20">
+                    <Play className="w-16 h-16 text-white/80 fill-white" />
+                  </div>
                 )}
-                <p className="text-center font-cursive text-2xl mt-4 text-gray-800">{selectedVideo.caption || "Special Moment"}</p>
+
+                {/* Volume Toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMuted(!isMuted);
+                  }}
+                  className="absolute bottom-6 right-4 z-[70] p-3 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-all border border-white/10"
+                >
+                  {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+                </button>
               </div>
+            ) : (
+              <img
+                src={mediaItems[activeIndex].src}
+                alt={mediaItems[activeIndex].caption}
+                className="w-full h-full object-contain"
+              />
             )}
+
+            {/* Navigation Overlays (Desktop & Mobile Tap Zones) */}
+            <div className="absolute inset-y-0 left-0 w-1/4 z-[60] flex items-center justify-start opacity-0 hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : mediaItems.length - 1));
+                }}
+                className="p-2 ml-2 bg-black/50 rounded-full text-white"
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+            </div>
+            <div className="absolute inset-y-0 right-0 w-1/4 z-[60] flex items-center justify-end opacity-0 hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveIndex((prev) => (prev !== null && prev < mediaItems.length - 1 ? prev + 1 : 0));
+                }}
+                className="p-2 mr-2 bg-black/50 rounded-full text-white"
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </div>
+
+            {/* Bottom Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+              <h3 className="text-white font-cursive text-3xl drop-shadow-md">
+                {mediaItems[activeIndex].caption}
+              </h3>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </>
   );
 };
