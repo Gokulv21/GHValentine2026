@@ -4,7 +4,6 @@ import TypewriterText from "@/components/TypewriterText";
 import RomanticBox from "@/components/RomanticBox";
 import ValentineButtons from "@/components/ValentineButtons";
 import MediaCollage from "@/components/MediaCollage";
-import MusicToggle from "@/components/MusicToggle";
 
 const Index = () => {
   const [showSecondText, setShowSecondText] = useState(false);
@@ -24,7 +23,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-romantic-gradient overflow-x-hidden">
       <FloatingLetters />
-      <MusicToggle />
 
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">

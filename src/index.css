@@ -102,6 +102,8 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Cinzel', serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -135,6 +137,14 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* GPU acceleration for romantic box and common elements */
+  .animate-bounce-gentle,
+  .animate-sway,
+  .animate-float {
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
   }
 }
 
@@ -210,12 +220,14 @@
 }
 
 .animate-rope-drop {
-  animation: rope-drop 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: rope-drop 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  will-change: transform;
 }
 
 .animate-rope-swing {
-  animation: rope-swing 6s ease-in-out infinite;
+  animation: rope-swing 5s ease-in-out infinite alternate;
   transform-origin: top center;
+  will-change: transform;
 }
 
 @keyframes pulse-glow {

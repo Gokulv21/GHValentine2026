@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Play, X, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import VideoItem from "./VideoItem";
+import { useMusic } from "../context/MusicContext";
 
 // Dynamically import all compatible assets
 const assetModules = import.meta.glob('../assets/*.{jpg,jpeg,png,mp4,JPG,JPEG,PNG,MP4}', { eager: true, as: 'url' });
@@ -19,6 +20,7 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { pauseForVideo, resumeAfterVideo } = useMusic();
 
   // Process assets into a usable array
   const { pinnedItems, mediaItems } = useMemo(() => {
@@ -135,6 +137,18 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
     };
   }, [visible, mediaItems]);
 
+  // Handle ESC key to close viewer and resume music
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && activeIndex !== null) {
+        setActiveIndex(null);
+        resumeAfterVideo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIndex, resumeAfterVideo]);
+
 
   if (!visible) return null;
 
@@ -225,11 +239,15 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
                         cursor-pointer relative
                         max-w-[280px] md:max-w-[320px]
                         hover:z-50 hover:rotate-0
+                        will-change-transform
                         `}
                         style={{
-                          transform: `rotate(${randomRotate}deg)`
+                          transform: `rotate(${randomRotate}deg) translate3d(0,0,0)`
                         }}
-                        onClick={() => setActiveIndex(index)}
+                        onClick={() => {
+                          setActiveIndex(index);
+                          pauseForVideo();
+                        }}
                       >
                         {/* Pin or Tape */}
                         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-gray-300 shadow-inner z-10 border border-gray-400"></div>
@@ -280,13 +298,17 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
       {activeIndex !== null && (
         <div
           className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center animate-in fade-in duration-300"
-          onClick={() => setActiveIndex(null)} // Close when clicking background
+          onClick={() => {
+            setActiveIndex(null);
+            resumeAfterVideo();
+          }} // Close when clicking background
         >
           {/* Close Button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setActiveIndex(null);
+              resumeAfterVideo();
             }}
             className="absolute top-6 right-6 z-[70] p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-all border border-white/10"
           >
