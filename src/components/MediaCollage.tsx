@@ -18,6 +18,7 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(true); // Start muted like Instagram
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isSwinging, setIsSwinging] = useState(true);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const { pauseForVideo, resumeAfterVideo } = useMusic();
@@ -149,6 +150,17 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeIndex, resumeAfterVideo]);
 
+  // Handle Rope Animation Timeout
+  useEffect(() => {
+    if (!visible) return;
+
+    const timer = setTimeout(() => {
+      setIsSwinging(false);
+    }, 20000); // 20 seconds
+
+    return () => clearTimeout(timer);
+  }, [visible]);
+
 
   if (!visible) return null;
 
@@ -188,7 +200,7 @@ const MediaCollage = ({ visible }: { visible: boolean }) => {
         {/* Rope Container with Drop Animation */}
         <div className="relative mt-20 pb-48 animate-rope-drop origin-top">
           {/* Animated Swinging Rope Wrapper */}
-          <div className="animate-rope-swing origin-top">
+          <div className={`${isSwinging ? 'animate-rope-swing' : ''} origin-top transition-transform duration-[2000ms] ease-in-out`}>
 
             {/* The Main Rope Line */}
             <div className="absolute left-1/2 top-[-50px] bottom-[-50px] transform -translate-x-1/2 w-1.5 md:w-2 bg-amber-700 shadow-md z-0 rounded-full">
